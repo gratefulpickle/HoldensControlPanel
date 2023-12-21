@@ -1,0 +1,103 @@
+#include <Arduino.h>
+#include <SimpleRotary.h>
+
+#define pot_r A1
+#define pot_g A2
+#define pot_b A3
+
+const int numReadings = 10;
+
+int readIndex = 0;           // the index of the current reading
+int readings_R[numReadings]; // the readings from the analog input
+int readings_G[numReadings];
+int readings_B[numReadings];
+
+int total_R = 0; // running total
+int total_G = 0;
+int total_B = 0;
+
+int average_R = 0; // average
+int average_G = 0;
+int average_B = 0;
+
+int lastavg_R = 0;
+int lastavg_G = 0;
+int lastavg_B = 0;
+
+void RGBPotsSetup()
+{
+  pinMode(pot_r, INPUT);
+  pinMode(pot_g, INPUT);
+  pinMode(pot_b, INPUT);
+
+  // initialize
+  for (int thisReading = 0; thisReading < numReadings; thisReading++)
+  {
+    readings_R[thisReading] = 0;
+    readings_G[thisReading] = 0;
+    readings_B[thisReading] = 0;
+  }
+}
+
+void setR(int R)
+{
+  // Serial.println("setR");
+  auto c = ws2812fx.getColor();
+  // Serial.println(c, HEX);
+  // Serial.print("adjusting red from");
+  uint8_t r = (c >> 16) & 0xFF;
+  uint8_t g = (c >> 8) & 0xFF;
+  uint8_t b = c & 0xFF;
+  // Serial.print(r, HEX);
+  ws2812fx.setColor(R, g, b);
+  // Serial.print(" to ");
+  // Serial.println(r);
+}
+
+void RGBLoop()
+{
+
+  // subtract the last reading
+  total_R = total_R - readings_R[readIndex];
+  // read from the sensors:
+  readings_R[readIndex] = analogRead(pot_r);
+  readings_G[readIndex] = analogRead(pot_g);
+  readings_B[readIndex] = analogRead(pot_b);
+  // add the reading to the total:
+  total = total + readings[readIndex];
+  readIndex = readIndex + 1;
+
+  // if end, wrap
+  if (readIndex >= numReadings)
+    readIndex = 0;
+
+  // calculate the average:
+  average = total / numReadings;
+  if (abs(lastavg - average) > 5)
+  {
+    Serial.println(average);
+    setR(map(average, 0, 1024, 0, 255));
+  }
+}
+
+// working example from using rotary encoder instead of pot.
+// pot felt better and was more responsive
+//
+// void adjustR(uint8_t step)
+// {
+//   auto c = ws2812fx.getColor();
+//   Serial.println(c, HEX);
+//   Serial.print("adjusting red from");
+//   uint8_t r = (c >> 16) & 0xFF;
+//   uint8_t g = (c >> 8) & 0xFF;
+//   uint8_t b = c & 0xFF;
+//   Serial.print(r, HEX);
+//   if (step < 0)
+//     r -= step;
+//   else
+//     r += step;
+
+//   ws2812fx.setColor(r, g, b);
+//   Serial.print(" to ");
+//   Serial.println(r);
+// }
